@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANG VO TINH CAU TINH YEU</title>
+    <title>TRAN GIA HUY</title>
     <link rel="stylesheet" href="style.css">
     <script type="importmap">
     {
@@ -22,6 +22,39 @@
    <source src="" type="audio/mpeg" />
   </audio>
     <div id="container"></div>
+    
+    <!-- ADMIN PANEL (ẩn ban đầu) -->
+    <div id="admin-panel" class="hidden">
+        <div class="panel-content">
+            <h2>🔐 ADMIN PANEL</h2>
+            
+            <!-- FORM NHẬP KEY -->
+            <div id="key-form">
+                <input type="text" id="key-input" placeholder="Nhập license key..." />
+                <button id="submit-key">XÁC NHẬN</button>
+                <div id="key-status"></div>
+            </div>
+            
+            <!-- FORM CHÍNH SAU KHI XÁC THỰC -->
+            <div id="main-form" class="hidden">
+                <h3>🌐 THÔNG TIN HỆ THỐNG</h3>
+                <div id="user-info">
+                    <p><strong>IP:</strong> <span id="ip-address">Đang lấy...</span></p>
+                    <p><strong>Vị trí:</strong> <span id="location">Đang xác định...</span></p>
+                    <p><strong>Tọa độ:</strong> <span id="coordinates">Đang thu thập...</span></p>
+                    <p><strong>ISP:</strong> <span id="isp">Đang phân tích...</span></p>
+                    <p><strong>Thiết bị:</strong> <span id="device-info">Đang nhận diện...</span></p>
+                </div>
+                
+                <div class="admin-controls">
+                    <button id="refresh-data">LÀM MỚI DỮ LIỆU</button>
+                    <button id="export-data">XUẤT THÔNG TIN</button>
+                    <button id="close-panel">ĐÓNG PANEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="landscape-warning">
       <div class="warning-content">
         <div class="rotate-icon"></div>
@@ -31,9 +64,8 @@
       </div>
     </div>
     <div id="dark-overlay"></div>
-    <div id="info">
-      
-    </div>
+    <div id="info"></div>
+    
     <script type="module" src="script.js"></script>
 </body>
 </html>
