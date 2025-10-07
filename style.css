@@ -415,4 +415,119 @@ body:not(.landscape-warning-active) #container canvas {
   20% { transform: rotate(18deg); }
   40% { transform: rotate(-18deg); }
   100% { transform: rotate(-18deg); }
+
 } 
+/* ADMIN PANEL STYLES */
+#admin-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #00ffff;
+    border-radius: 15px;
+    padding: 20px;
+    z-index: 1000;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+#admin-panel.hidden {
+    display: none;
+}
+
+.panel-content h2 {
+    color: #00ffff;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-shadow: 0 0 10px #00ffff;
+}
+
+#key-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #00ffff;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+}
+
+#key-form button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(45deg, #00ffff, #0080ff);
+    border: none;
+    border-radius: 5px;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#key-form button:hover {
+    background: linear-gradient(45deg, #0080ff, #00ffff);
+    transform: scale(1.05);
+}
+
+#key-status {
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+#main-form h3 {
+    color: #00ff00;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+#user-info {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+#user-info p {
+    margin: 8px 0;
+    color: white;
+    font-size: 14px;
+}
+
+.admin-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-controls button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#refresh-data {
+    background: linear-gradient(45deg, #ff9900, #ff6600);
+}
+
+#export-data {
+    background: linear-gradient(45deg, #00ff00, #00cc00);
+}
+
+#close-panel {
+    background: linear-gradient(45deg, #ff0000, #cc0000);
+}
+
+.admin-controls button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px currentColor;
+}
