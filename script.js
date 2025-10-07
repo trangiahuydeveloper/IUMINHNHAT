@@ -374,7 +374,7 @@ starField.renderOrder = 999;
 scene.add(starField);
 
 // ---- TẠO HÀNH TINH TRUNG TÂM ----
-const planetRadius = 10; // THÊM DÒNG NÀY ĐỂ FIX LỖI
+const planetRadius = 10;
 
 function createPlanetTexture(size = 512) {
   const canvas = document.createElement('canvas');
@@ -826,7 +826,7 @@ function animateHintIcon(time) {
 // ---- TẠO SAO BĂNG (SHOOTING STARS) ----
 let shootingStars = [];
 
-function createRandomCurve() { // THÊM HÀM NÀY VÀO
+function createRandomCurve() {
   const points = [];
   const startPoint = new THREE.Vector3(-200 + Math.random() * 100, -100 + Math.random() * 200, -100 + Math.random() * 200);
   const endPoint = new THREE.Vector3(600 + Math.random() * 200, startPoint.y + (-100 + Math.random() * 200), startPoint.z + (-100 + Math.random() * 200));
