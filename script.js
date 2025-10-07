@@ -1474,13 +1474,15 @@ function setFullScreen() {
   }
 }
 
+
 function checkOrientation() {
+  // Kiểm tra nếu chiều cao lớn hơn chiều rộng (màn hình dọc trên điện thoại)
   const isMobilePortrait = window.innerHeight > window.innerWidth && 'ontouchstart' in window;
 
   if (isMobilePortrait) {
-    document.body.classList.add('portrait-mode');
+    document.body.classList.add('portrait-mode'); // SỬA THÀNH portrait-mode
   } else {
-    document.body.classList.remove('portrait-mode');
+    document.body.classList.remove('portrait-mode'); // SỬA THÀNH portrait-mode
   }
 }
 
@@ -1505,3 +1507,4 @@ checkOrientation();
 animate();
 
 console.log('🔐 Admin Panel: Nhấn P để mở panel admin');
+
