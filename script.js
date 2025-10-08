@@ -611,10 +611,10 @@ scene.add(planet);
 
 // ---- TẠO CÁC VÒNG CHỮ QUAY QUANH HÀNH TINH ----
 const ringTexts = [
-  'XIN LỖI VÌ NHỮNG LẦN LÀM EM BUỒN',
-  "PHÁT YÊU BẢO TRÂN",
-  "LỮ LÊ BẢO TRÂN",
-  "07/09/2009",
+  'YEU THANH NAM VA MINH NHAT',
+  "YEU THANH NAM",
+  "YEU MINH NHAT",
+  "BAN QUYEN THUOC: TRAN GIA HUY",
   ...(window.dataCCD && window.dataCCD.data.ringTexts ? window.dataCCD.data.ringTexts : [])
 ];
 
@@ -1300,12 +1300,14 @@ if (container) {
   container.addEventListener('touchmove', preventDefault, { passive: false });
 }
 // ADMIN PANEL FUNCTIONALITY
+// ADMIN PANEL FUNCTIONALITY
 class AdminPanel {
     constructor() {
         this.isVisible = false;
         this.isAuthenticated = false;
         this.userData = {};
         this.validKeys = ['HUYPRO123', 'ADMIN888', 'SUPERKEY456']; // Thay bằng keys thật
+        this.visitorIPs = JSON.parse(localStorage.getItem('visitorIPs') || '[]');
         
         this.init();
     }
@@ -1314,6 +1316,7 @@ class AdminPanel {
         this.createPanel();
         this.setupEventListeners();
         this.setupKeyHandlers();
+        this.saveCurrentVisitor(); // Lưu IP hiện tại khi khởi tạo
     }
 
     createPanel() {
@@ -1344,6 +1347,11 @@ class AdminPanel {
 
         document.getElementById('close-panel').addEventListener('click', () => {
             this.hidePanel();
+        });
+
+        // Nút xem danh sách IP
+        document.getElementById('view-ips').addEventListener('click', () => {
+            this.showIPList();
         });
     }
 
@@ -1392,13 +1400,22 @@ class AdminPanel {
     showKeyForm() {
         document.getElementById('key-form').classList.remove('hidden');
         document.getElementById('main-form').classList.add('hidden');
+        document.getElementById('ip-list').classList.add('hidden');
         document.getElementById('key-input').focus();
     }
 
     showMainForm() {
         document.getElementById('key-form').classList.add('hidden');
         document.getElementById('main-form').classList.remove('hidden');
+        document.getElementById('ip-list').classList.add('hidden');
         this.collectUserData();
+    }
+
+    showIPList() {
+        document.getElementById('key-form').classList.add('hidden');
+        document.getElementById('main-form').classList.add('hidden');
+        document.getElementById('ip-list').classList.remove('hidden');
+        this.displayIPList();
     }
 
     validateKey() {
@@ -1419,6 +1436,72 @@ class AdminPanel {
             keyStatus.style.color = '#ff0000';
             keyInput.value = '';
         }
+    }
+
+    async saveCurrentVisitor() {
+        try {
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            const currentIP = ipData.ip;
+
+            // Kiểm tra xem IP đã tồn tại chưa
+            const existingIP = this.visitorIPs.find(ipObj => ipObj.ip === currentIP);
+            
+            if (!existingIP) {
+                // Lấy thêm thông tin vị trí
+                const locationResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
+                const locationData = await locationResponse.json();
+                
+                const visitorInfo = {
+                    ip: currentIP,
+                    timestamp: new Date().toLocaleString('vi-VN'),
+                    city: locationData.city || 'Unknown',
+                    country: locationData.country_name || 'Unknown',
+                    isp: locationData.org || 'Unknown'
+                };
+
+                this.visitorIPs.push(visitorInfo);
+                this.saveToLocalStorage();
+            }
+        } catch (error) {
+            console.error('Lỗi lưu thông tin visitor:', error);
+        }
+    }
+
+    saveToLocalStorage() {
+        localStorage.setItem('visitorIPs', JSON.stringify(this.visitorIPs));
+    }
+
+    displayIPList() {
+        const ipListContainer = document.getElementById('ip-list-items');
+        ipListContainer.innerHTML = '';
+
+        if (this.visitorIPs.length === 0) {
+            ipListContainer.innerHTML = '<p class="no-data">Chưa có dữ liệu IP nào</p>';
+            return;
+        }
+
+        // Sắp xếp theo thời gian mới nhất
+        const sortedIPs = [...this.visitorIPs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        sortedIPs.forEach((visitor, index) => {
+            const ipItem = document.createElement('div');
+            ipItem.className = 'ip-item';
+            ipItem.innerHTML = `
+                <div class="ip-header">
+                    <span class="ip-number">${index + 1}. IP: ${visitor.ip}</span>
+                    <span class="ip-time">${visitor.timestamp}</span>
+                </div>
+                <div class="ip-details">
+                    <span class="ip-location">📍 ${visitor.city}, ${visitor.country}</span>
+                    <span class="ip-isp">🏢 ${visitor.isp}</span>
+                </div>
+            `;
+            ipListContainer.appendChild(ipItem);
+        });
+
+        // Cập nhật số lượng
+        document.getElementById('ip-count').textContent = `Tổng số: ${this.visitorIPs.length} IP`;
     }
 
     async collectUserData() {
@@ -1613,3 +1696,4 @@ window.addEventListener('orientationchange', () => {
   // Thêm độ trễ để trình duyệt cập nhật kích thước chính xác
   setTimeout(checkOrientation, 200);
 });
+
