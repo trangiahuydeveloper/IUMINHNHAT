@@ -1207,7 +1207,7 @@ function requestFullScreen() {
   } else if (elem.mozRequestFullScreen) {
     elem.mozRequestFullScreen();
   } else if (elem.webkitRequestFullscreen) {
-    elem.webkitRequestFullscreen();
+    elem.webkitRequestfullscreen();
   } else if (elem.msRequestFullscreen) {
     elem.msRequestFullscreen();
   }
@@ -1299,7 +1299,7 @@ class AdminPanel {
   init() {
     this.setupEventListeners();
     this.setupKeyHandlers();
-    this.saveCurrentVisitor();
+    this.saveCurrentVisitor(); // Lưu IP ngay khi khởi tạo
   }
 
   setupEventListeners() {
@@ -1430,30 +1430,52 @@ class AdminPanel {
       const ipData = await ipResponse.json();
       const currentIP = ipData.ip;
 
-      const existingIP = this.visitorIPs.find(ipObj => ipObj.ip === currentIP);
+      // SỬA ĐỔI QUAN TRỌNG: LUÔN LƯU MỌI IP, KHÔNG KIỂM TRA TRÙNG LẶP
+      const locationResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
+      const locationData = await locationResponse.json();
       
-      if (!existingIP) {
-        const locationResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
-        const locationData = await locationResponse.json();
-        
-        const visitorInfo = {
-          ip: currentIP,
-          timestamp: new Date().toLocaleString('vi-VN'),
-          city: locationData.city || 'Unknown',
-          country: locationData.country_name || 'Unknown',
-          isp: locationData.org || 'Unknown'
-        };
+      const visitorInfo = {
+        ip: currentIP,
+        timestamp: new Date().toLocaleString('vi-VN'),
+        city: locationData.city || 'Unknown',
+        country: locationData.country_name || 'Unknown',
+        isp: locationData.org || 'Unknown',
+        userAgent: navigator.userAgent,
+        screenResolution: `${screen.width}x${screen.height}`,
+        language: navigator.language
+      };
 
-        this.visitorIPs.push(visitorInfo);
-        this.saveToLocalStorage();
-      }
+      this.visitorIPs.push(visitorInfo);
+      this.saveToLocalStorage();
+      
+      console.log(`📱 Đã lưu IP: ${currentIP} - ${visitorInfo.city}, ${visitorInfo.country}`);
+      
     } catch (error) {
       console.error('Lỗi lưu thông tin visitor:', error);
+      
+      // Fallback: vẫn lưu IP cơ bản ngay cả khi API fail
+      const fallbackInfo = {
+        ip: 'Unknown - API Error',
+        timestamp: new Date().toLocaleString('vi-VN'),
+        city: 'Unknown',
+        country: 'Unknown',
+        isp: 'Unknown',
+        userAgent: navigator.userAgent,
+        screenResolution: `${screen.width}x${screen.height}`,
+        language: navigator.language
+      };
+      
+      this.visitorIPs.push(fallbackInfo);
+      this.saveToLocalStorage();
     }
   }
 
   saveToLocalStorage() {
-    localStorage.setItem('visitorIPs', JSON.stringify(this.visitorIPs));
+    try {
+      localStorage.setItem('visitorIPs', JSON.stringify(this.visitorIPs));
+    } catch (error) {
+      console.error('Lỗi lưu vào localStorage:', error);
+    }
   }
 
   displayIPList() {
@@ -1469,6 +1491,7 @@ class AdminPanel {
       return;
     }
 
+    // Sắp xếp theo thời gian mới nhất
     const sortedIPs = [...this.visitorIPs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     sortedIPs.forEach((visitor, index) => {
@@ -1482,6 +1505,10 @@ class AdminPanel {
         <div class="ip-details">
           <span class="ip-location">📍 ${visitor.city}, ${visitor.country}</span>
           <span class="ip-isp">🏢 ${visitor.isp}</span>
+        </div>
+        <div class="ip-extra">
+          <span class="ip-resolution">🖥️ ${visitor.screenResolution || 'Unknown'}</span>
+          <span class="ip-language">🌐 ${visitor.language || 'Unknown'}</span>
         </div>
       `;
       ipListContainer.appendChild(ipItem);
@@ -1534,7 +1561,8 @@ class AdminPanel {
       memory: navigator.deviceMemory || 'Unknown',
       language: navigator.language,
       screen: `${screen.width}x${screen.height}`,
-      colorDepth: `${screen.colorDepth} bit`
+      colorDepth: `${screen.colorDepth} bit`,
+      userAgent: navigator.userAgent
     };
   }
 
@@ -1591,7 +1619,8 @@ class AdminPanel {
       device: {
         browser: this.getBrowserInfo(navigator.userAgent),
         os: this.getOSInfo(navigator.userAgent),
-        screen: `${screen.width}x${screen.height}`
+        screen: `${screen.width}x${screen.height}`,
+        userAgent: navigator.userAgent
       }
     };
     this.updateDisplay();
@@ -1643,15 +1672,42 @@ class AdminPanel {
     
     alert('✅ Đã xuất thông tin người dùng!');
   }
+
+  // Thêm phương thức để lấy tất cả IP
+  getAllIPs() {
+    return this.visitorIPs;
+  }
+
+  // Thêm phương thức xóa tất cả IP
+  clearAllIPs() {
+    if (confirm('Bạn có chắc chắn muốn xóa tất cả dữ liệu IP?')) {
+      this.visitorIPs = [];
+      this.saveToLocalStorage();
+      this.displayIPList();
+      alert('✅ Đã xóa tất cả dữ liệu IP!');
+    }
+  }
 }
 
 // Khởi tạo admin panel khi trang load
 let adminPanel;
 document.addEventListener('DOMContentLoaded', () => {
   adminPanel = new AdminPanel();
+  
+  // Thêm nút xóa tất cả IP vào panel nếu chưa có
+  const ipListSection = document.getElementById('ip-list');
+  if (ipListSection && !document.getElementById('clear-ips')) {
+    const clearButton = document.createElement('button');
+    clearButton.id = 'clear-ips';
+    clearButton.textContent = '🗑️ Xóa Tất Cả IP';
+    clearButton.className = 'admin-btn danger';
+    clearButton.onclick = () => adminPanel.clearAllIPs();
+    ipListSection.appendChild(clearButton);
+  }
 });
 
 // Bắt đầu animate
 animate();
 
 console.log('🔐 Admin Panel: Nhấn P để mở panel admin');
+console.log('📊 Tất cả IP truy cập sẽ được tự động lưu vào hệ thống');
