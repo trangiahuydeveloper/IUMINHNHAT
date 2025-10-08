@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+
 // ---- KHỞI TẠO SCENE, CAMERA, RENDERER ----
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x000000, 0.0015);
@@ -123,7 +122,6 @@ console.log(`Số lượng ảnh: ${numGroups}, Điểm mỗi ảnh: ${pointsPer
 const positions = new Float32Array(galaxyParameters.count * 3);
 const colors = new Float32Array(galaxyParameters.count * 3);
 
-
 let pointIdx = 0;
 for (let i = 0; i < galaxyParameters.count; i++) {
   const radius = Math.pow(Math.random(), galaxyParameters.randomnessPower) * galaxyParameters.radius;
@@ -131,7 +129,7 @@ for (let i = 0; i < galaxyParameters.count; i++) {
   const spinAngle = radius * galaxyParameters.spin;
 
   const randomX = (Math.random() - 0.5) * galaxyParameters.randomness * radius;
-  const randomY = (Math.random() - 0.5) * galaxyParameters.randomness * radius * 1.2; // thay từ 0.5 lên 1.5
+  const randomY = (Math.random() - 0.5) * galaxyParameters.randomness * radius * 1.2;
   const randomZ = (Math.random() - 0.5) * galaxyParameters.randomness * radius;
   const totalAngle = branchAngle + spinAngle;
 
@@ -165,54 +163,51 @@ const galaxyMaterial = new THREE.ShaderMaterial({
     uRippleWidth: { value: 20.0 }
   },
   vertexShader: `
-        uniform float uSize;
-        uniform float uTime;
-        uniform float uRippleTime;
-        uniform float uRippleSpeed;
-        uniform float uRippleWidth;
+    uniform float uSize;
+    uniform float uTime;
+    uniform float uRippleTime;
+    uniform float uRippleSpeed;
+    uniform float uRippleWidth;
 
-        varying vec3 vColor;
+    varying vec3 vColor;
 
-        void main() {
-            // Lấy màu gốc từ geometry (giống hệt vertexColors: true)
-            vColor = color;
+    void main() {
+        vColor = color;
 
-            vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+        vec4 modelPosition = modelMatrix * vec4(position, 1.0);
 
-            // ---- LOGIC HIỆU ỨNG GỢN SÓNG ----
-            if (uRippleTime > 0.0) {
-                float rippleRadius = (uTime - uRippleTime) * uRippleSpeed;
-                float particleDist = length(modelPosition.xyz);
+        if (uRippleTime > 0.0) {
+            float rippleRadius = (uTime - uRippleTime) * uRippleSpeed;
+            float particleDist = length(modelPosition.xyz);
 
-                float strength = 1.0 - smoothstep(rippleRadius - uRippleWidth, rippleRadius + uRippleWidth, particleDist);
-                strength *= smoothstep(rippleRadius + uRippleWidth, rippleRadius - uRippleWidth, particleDist);
+            float strength = 1.0 - smoothstep(rippleRadius - uRippleWidth, rippleRadius + uRippleWidth, particleDist);
+            strength *= smoothstep(rippleRadius + uRippleWidth, rippleRadius - uRippleWidth, particleDist);
 
-                if (strength > 0.0) {
-                    vColor += vec3(strength * 2.0); // Làm màu sáng hơn khi sóng đi qua
-                }
+            if (strength > 0.0) {
+                vColor += vec3(strength * 2.0);
             }
-
-            vec4 viewPosition = viewMatrix * modelPosition;
-            gl_Position = projectionMatrix * viewPosition;
-            // Dòng này làm cho các hạt nhỏ hơn khi ở xa, mô phỏng hành vi của PointsMaterial
-            gl_PointSize = uSize / -viewPosition.z;
         }
-    `,
+
+        vec4 viewPosition = viewMatrix * modelPosition;
+        gl_Position = projectionMatrix * viewPosition;
+        gl_PointSize = uSize / -viewPosition.z;
+    }
+  `,
   fragmentShader: `
-        varying vec3 vColor;
-        void main() {
-            // Làm cho các hạt có hình tròn thay vì hình vuông
-            float dist = length(gl_PointCoord - vec2(0.5));
-            if (dist > 0.5) discard;
+    varying vec3 vColor;
+    void main() {
+        float dist = length(gl_PointCoord - vec2(0.5));
+        if (dist > 0.5) discard;
 
-            gl_FragColor = vec4(vColor, 1.0);
-        }
-    `,
+        gl_FragColor = vec4(vColor, 1.0);
+    }
+  `,
   blending: THREE.AdditiveBlending,
   depthWrite: false,
   transparent: true,
   vertexColors: true
 });
+
 const galaxy = new THREE.Points(galaxyGeometry, galaxyMaterial);
 scene.add(galaxy);
 
@@ -320,7 +315,7 @@ for (let group = 0; group < numGroups; group++) {
   groupGeometryFar.translate(-cx, -cy, -cz);
 
   // Tải hình ảnh và tạo vật thể
-  const img = new window.Image();
+  const img = new Image();
   img.crossOrigin = "Anonymous";
   img.src = heartImages[group];
   img.onload = () => {
@@ -350,7 +345,7 @@ for (let group = 0; group < numGroups; group++) {
     });
 
     const pointsObject = new THREE.Points(groupGeometryFar, materialFar);
-    pointsObject.position.set(cx, cy, cz); // Đặt lại vị trí ban đầu trong scene
+    pointsObject.position.set(cx, cy, cz);
 
     // Lưu trữ các trạng thái để chuyển đổi sau này
     pointsObject.userData.materialNear = materialNear;
@@ -361,7 +356,6 @@ for (let group = 0; group < numGroups; group++) {
     scene.add(pointsObject);
   };
 }
-
 
 // ---- ÁNH SÁNG MÔI TRƯỜNG ----
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -390,9 +384,17 @@ starField.name = 'starfield';
 starField.renderOrder = 999;
 scene.add(starField);
 
-
 // ---- TẠO SAO BĂNG (SHOOTING STARS) ----
 let shootingStars = [];
+
+function createRandomCurve() {
+  const startPoint = new THREE.Vector3(-200 + Math.random() * 100, -100 + Math.random() * 200, -100 + Math.random() * 200);
+  const endPoint = new THREE.Vector3(600 + Math.random() * 200, startPoint.y + (-100 + Math.random() * 200), startPoint.z + (-100 + Math.random() * 200));
+  const controlPoint1 = new THREE.Vector3(startPoint.x + 200 + Math.random() * 100, startPoint.y + (-50 + Math.random() * 100), startPoint.z + (-50 + Math.random() * 100));
+  const controlPoint2 = new THREE.Vector3(endPoint.x - 200 + Math.random() * 100, endPoint.y + (-50 + Math.random() * 100), endPoint.z + (-50 + Math.random() * 100));
+
+  return new THREE.CubicBezierCurve3(startPoint, controlPoint1, controlPoint2, endPoint);
+}
 
 function createShootingStar() {
   const trailLength = 100;
@@ -412,54 +414,26 @@ function createShootingStar() {
   const glowMaterial = new THREE.ShaderMaterial({
     uniforms: { time: { value: 0 } },
     vertexShader: `
-            varying vec3 vNormal;
-            void main() {
-                vNormal = normalize(normalMatrix * normal);
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
+      varying vec3 vNormal;
+      void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
     fragmentShader: `
-            varying vec3 vNormal;
-            uniform float time;
-            void main() {
-                float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-                gl_FragColor = vec4(1.0, 1.0, 1.0, intensity * (0.8 + sin(time * 5.0) * 0.2));
-            }
-        `,
+      varying vec3 vNormal;
+      uniform float time;
+      void main() {
+          float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+          gl_FragColor = vec4(1.0, 1.0, 1.0, intensity * (0.8 + sin(time * 5.0) * 0.2));
+      }
+    `,
     transparent: true,
     blending: THREE.AdditiveBlending,
     side: THREE.BackSide
   });
   const glow = new THREE.Mesh(glowGeometry, glowMaterial);
   head.add(glow);
-
-  const atmosphereGeometry = new THREE.SphereGeometry(planetRadius * 1.05, 48, 48);
-  const atmosphereMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-      glowColor: { value: new THREE.Color(0xe0b3ff) }
-    },
-    vertexShader: `
-        varying vec3 vNormal;
-        void main() {
-            vNormal = normalize(normalMatrix * normal);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        varying vec3 vNormal;
-        uniform vec3 glowColor;
-        void main() {
-            float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-            gl_FragColor = vec4(glowColor, 1.0) * intensity;
-        }
-    `,
-    side: THREE.BackSide, // Nhìn từ bên trong
-    blending: THREE.AdditiveBlending,
-    transparent: true
-  });
-
-  const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-  planet.add(atmosphere); // Thêm khí quyển làm con của hành tinh
 
   // Đuôi sao băng
   const curve = createRandomCurve();
@@ -495,18 +469,6 @@ function createShootingStar() {
   shootingStars.push(shootingStarGroup);
 }
 
-function createRandomCurve() {
-  const points = [];
-  const startPoint = new THREE.Vector3(-200 + Math.random() * 100, -100 + Math.random() * 200, -100 + Math.random() * 200);
-  const endPoint = new THREE.Vector3(600 + Math.random() * 200, startPoint.y + (-100 + Math.random() * 200), startPoint.z + (-100 + Math.random() * 200));
-  const controlPoint1 = new THREE.Vector3(startPoint.x + 200 + Math.random() * 100, startPoint.y + (-50 + Math.random() * 100), startPoint.z + (-50 + Math.random() * 100));
-  const controlPoint2 = new THREE.Vector3(endPoint.x - 200 + Math.random() * 100, endPoint.y + (-50 + Math.random() * 100), endPoint.z + (-50 + Math.random() * 100));
-
-  points.push(startPoint, controlPoint1, controlPoint2, endPoint);
-  return new THREE.CubicBezierCurve3(startPoint, controlPoint1, controlPoint2, endPoint);
-}
-
-
 // ---- TẠO HÀNH TINH TRUNG TÂM ----
 
 // Hàm tạo texture cho hành tinh
@@ -536,7 +498,7 @@ function createPlanetTexture(size = 512) {
     const radius = 30 + Math.random() * 120;
     const color = spotColors[Math.floor(Math.random() * spotColors.length)];
     const spotGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-    spotGradient.addColorStop(0, color + 'cc'); // 'cc' là alpha
+    spotGradient.addColorStop(0, color + 'cc');
     spotGradient.addColorStop(1, color + '00');
     ctx.fillStyle = spotGradient;
     ctx.fillRect(0, 0, size, size);
@@ -569,28 +531,28 @@ const stormShader = {
     baseTexture: { value: null }
   },
   vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
+    varying vec2 vUv;
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
   fragmentShader: `
-        uniform float time;
-        uniform sampler2D baseTexture;
-        varying vec2 vUv;
-        void main() {
-            vec2 uv = vUv;
-            float angle = length(uv - vec2(0.5)) * 3.0;
-            float twist = sin(angle * 3.0 + time) * 0.1;
-            uv.x += twist * sin(time * 0.5);
-            uv.y += twist * cos(time * 0.5);
-            vec4 texColor = texture2D(baseTexture, uv);
-            float noise = sin(uv.x * 10.0 + time) * sin(uv.y * 10.0 + time) * 0.1;
-            texColor.rgb += noise * vec3(0.8, 0.4, 0.2);
-            gl_FragColor = texColor;
-        }
-    `
+    uniform float time;
+    uniform sampler2D baseTexture;
+    varying vec2 vUv;
+    void main() {
+        vec2 uv = vUv;
+        float angle = length(uv - vec2(0.5)) * 3.0;
+        float twist = sin(angle * 3.0 + time) * 0.1;
+        uv.x += twist * sin(time * 0.5);
+        uv.y += twist * cos(time * 0.5);
+        vec4 texColor = texture2D(baseTexture, uv);
+        float noise = sin(uv.x * 10.0 + time) * sin(uv.y * 10.0 + time) * 0.1;
+        texColor.rgb += noise * vec3(0.8, 0.4, 0.2);
+        gl_FragColor = texColor;
+    }
+  `
 };
 
 // Tạo vật thể hành tinh
@@ -609,13 +571,42 @@ const planet = new THREE.Mesh(planetGeometry, planetMaterial);
 planet.position.set(0, 0, 0);
 scene.add(planet);
 
+// Thêm khí quyển cho hành tinh
+const atmosphereGeometry = new THREE.SphereGeometry(planetRadius * 1.05, 48, 48);
+const atmosphereMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    glowColor: { value: new THREE.Color(0xe0b3ff) }
+  },
+  vertexShader: `
+    varying vec3 vNormal;
+    void main() {
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vNormal;
+    uniform vec3 glowColor;
+    void main() {
+        float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        gl_FragColor = vec4(glowColor, 1.0) * intensity;
+    }
+  `,
+  side: THREE.BackSide,
+  blending: THREE.AdditiveBlending,
+  transparent: true
+});
+
+const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+planet.add(atmosphere);
+
 // ---- TẠO CÁC VÒNG CHỮ QUAY QUANH HÀNH TINH ----
 const ringTexts = [
   'YEU THANH NAM VA MINH NHAT',
   "YEU THANH NAM",
   "YEU MINH NHAT",
   "BAN QUYEN THUOC: TRAN GIA HUY",
-  ...(window.dataCCD && window.dataCCD.data.ringTexts ? window.dataCCD.data.ringTexts : [])
+  ...(window.dataCCD && window.dataCCD.data && window.dataCCD.data.ringTexts ? window.dataCCD.data.ringTexts : [])
 ];
 
 function createTextRings() {
@@ -625,18 +616,18 @@ function createTextRings() {
   window.textRings = [];
 
   for (let i = 0; i < numRings; i++) {
-    const text = ringTexts[i % ringTexts.length] + '   '; // Thêm khoảng trắng
+    const text = ringTexts[i % ringTexts.length] + '   ';
     const ringRadius = baseRingRadius + i * ringSpacing;
 
-    // ---- Logic phân tích và điều chỉnh kích thước font chữ (được giữ nguyên) ----
+    // Phân tích và điều chỉnh kích thước font chữ
     function getCharType(char) {
       const charCode = char.charCodeAt(0);
-      if ((charCode >= 0x4E00 && charCode <= 0x9FFF) || // CJK
-        (charCode >= 0x3040 && charCode <= 0x309F) || // Hiragana
-        (charCode >= 0x30A0 && charCode <= 0x30FF) || // Katakana
-        (charCode >= 0xAC00 && charCode <= 0xD7AF)) { // Korean
+      if ((charCode >= 0x4E00 && charCode <= 0x9FFF) ||
+        (charCode >= 0x3040 && charCode <= 0x309F) ||
+        (charCode >= 0x30A0 && charCode <= 0x30FF) ||
+        (charCode >= 0xAC00 && charCode <= 0xD7AF)) {
         return 'cjk';
-      } else if (charCode >= 0 && charCode <= 0x7F) { // Latin
+      } else if (charCode >= 0 && charCode <= 0x7F) {
         return 'latin';
       }
       return 'other';
@@ -664,9 +655,8 @@ function createTextRings() {
       scaleParams.fontScale *= 0.9;
       scaleParams.spacingScale *= 1.1;
     }
-    // ---- Kết thúc logic phân tích font ----
 
-    // ---- Tạo texture chữ động ----
+    // Tạo texture chữ động
     const textureHeight = 150;
     const fontSize = Math.max(130, 0.8 * textureHeight);
 
@@ -679,7 +669,7 @@ function createTextRings() {
     let repeatedTextSegment = singleText + separator;
 
     let segmentWidth = tempCtx.measureText(repeatedTextSegment).width;
-    let textureWidthCircumference = 2 * Math.PI * ringRadius * 180; // Heuristic value
+    let textureWidthCircumference = 2 * Math.PI * ringRadius * 180;
     let repeatCount = Math.ceil(textureWidthCircumference / segmentWidth);
 
     let fullText = '';
@@ -710,7 +700,7 @@ function createTextRings() {
     ctx.shadowBlur = 18;
     ctx.lineWidth = 7;
     ctx.strokeStyle = '#fff';
-    ctx.strokeText(fullText, 0, textureHeight * 0.82); // căn dòng thấp hơn
+    ctx.strokeText(fullText, 0, textureHeight * 0.82);
 
     // Hiệu ứng glow cho phần fill
     ctx.shadowColor = '#ffb3de';
@@ -743,10 +733,10 @@ function createTextRings() {
     ringGroup.userData = {
       ringRadius: ringRadius,
       angleOffset: 0.15 * Math.PI * 0.5,
-      speed: 0.002 + 0.00025, // Tốc độ quay
-      tiltSpeed: 0, rollSpeed: 0, pitchSpeed: 0, // Tốc độ lắc
-      tiltAmplitude: Math.PI / 3, rollAmplitude: Math.PI / 6, pitchAmplitude: Math.PI / 8, // Biên độ lắc
-      tiltPhase: Math.PI * 2, rollPhase: Math.PI * 2, pitchPhase: Math.PI * 2, // Pha lắc
+      speed: 0.002 + 0.00025,
+      tiltSpeed: 0, rollSpeed: 0, pitchSpeed: 0,
+      tiltAmplitude: Math.PI / 3, rollAmplitude: Math.PI / 6, pitchAmplitude: Math.PI / 8,
+      tiltPhase: Math.PI * 2, rollPhase: Math.PI * 2, pitchPhase: Math.PI * 2,
       isTextRing: true
     };
 
@@ -800,10 +790,9 @@ function animatePlanetSystem() {
       const verticalBob = Math.sin(time * (userData.tiltSpeed * 0.7) + userData.tiltPhase) * 0.3;
       ringGroup.position.y = verticalBob;
 
-      const pulse = (Math.sin(time * 1.5 + index) + 1) / 2; // giá trị từ 0 đến 1
+      const pulse = (Math.sin(time * 1.5 + index) + 1) / 2;
       const textMesh = ringGroup.children[0];
       if (textMesh && textMesh.material) {
-        // Thay đổi độ mờ từ 0.7 đến 1.0
         textMesh.material.opacity = 0.7 + pulse * 0.3;
       }
     });
@@ -819,7 +808,7 @@ let galaxyAudio = null;
 
 function preloadGalaxyAudio() {
   const audioSources = [
-   "vutru.mp3"
+    "vutru.mp3"
   ];
 
   const randomIndex = Math.floor(Math.random() * audioSources.length);
@@ -828,8 +817,6 @@ function preloadGalaxyAudio() {
   galaxyAudio = new Audio(selectedSrc);
   galaxyAudio.loop = true;
   galaxyAudio.volume = 1.0;
-
-  // Preload không autoplay
   galaxyAudio.preload = "auto";
 }
 
@@ -842,8 +829,6 @@ function playGalaxyAudio() {
 }
 preloadGalaxyAudio();
 
-
-
 // ---- VÒNG LẶP ANIMATE ----
 let fadeOpacity = 0.1;
 let fadeInProgress = false;
@@ -854,11 +839,7 @@ let fadeInProgress = false;
 
 let hintIcon;
 let hintText;
-/**
- * Tạo icon con trỏ chuột 3D để gợi ý người dùng.
- * PHIÊN BẢN HOÀN CHỈNH: Con trỏ màu trắng đồng nhất và được đặt ở vị trí
- * xa hơn so với quả cầu trung tâm.
- */
+
 function createHintIcon() {
   hintIcon = new THREE.Group();
   hintIcon.name = 'hint-icon-group';
@@ -866,7 +847,7 @@ function createHintIcon() {
 
   const cursorVisuals = new THREE.Group();
 
-  // --- 1. TẠO HÌNH DẠNG CON TRỎ (Giữ nguyên) ---
+  // Tạo hình dạng con trỏ
   const cursorShape = new THREE.Shape();
   const h = 1.5;
   const w = h * 0.5;
@@ -880,20 +861,18 @@ function createHintIcon() {
   cursorShape.lineTo(w * 0.4, -h * 0.7);
   cursorShape.closePath();
 
-  // --- 2. TẠO CON TRỎ MÀU TRẮNG ---
-
-  // Lớp nền (trước là viền đen, giờ là nền trắng)
+  // Lớp nền trắng
   const backgroundGeometry = new THREE.ShapeGeometry(cursorShape);
   const backgroundMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff, // THAY ĐỔI: Chuyển viền thành màu trắng
+    color: 0xffffff,
     side: THREE.DoubleSide
   });
   const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
 
-  // Lớp trắng bên trong (giờ không cần thiết nhưng giữ lại để đảm bảo độ dày)
+  // Lớp trắng bên trong
   const foregroundGeometry = new THREE.ShapeGeometry(cursorShape);
   const foregroundMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff, // Giữ màu trắng
+    color: 0xffffff,
     side: THREE.DoubleSide
   });
   const foregroundMesh = new THREE.Mesh(foregroundGeometry, foregroundMaterial);
@@ -905,29 +884,60 @@ function createHintIcon() {
   cursorVisuals.position.y = h / 2;
   cursorVisuals.rotation.x = Math.PI / 2;
 
-  // --- 3. TẠO VÒNG TRÒN BAO QUANH (Giữ nguyên) ---
+  // Tạo vòng tròn bao quanh
   const ringGeometry = new THREE.RingGeometry(1.8, 2.0, 32);
   const ringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
   const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
   ringMesh.rotation.x = Math.PI / 2;
   hintIcon.userData.ringMesh = ringMesh;
 
-  // --- 4. HOÀN THIỆN ICON ---
+  // Hoàn thiện icon
   hintIcon.add(cursorVisuals);
   hintIcon.add(ringMesh);
 
-  // THAY ĐỔI: Đặt icon ở vị trí xa hơn
-  hintIcon.position.set(1.5, 1.5, 15); // Tăng giá trị Z từ 12 lên 20
-
+  hintIcon.position.set(1.5, 1.5, 15);
   hintIcon.scale.set(0.8, 0.8, 0.8);
   hintIcon.lookAt(planet.position);
   hintIcon.userData.initialPosition = hintIcon.position.clone();
 }
 
-/**
- * Animate icon gợi ý.
- * @param {number} time - Thời gian hiện tại.
- */
+function createHintText() {
+  const canvasSize = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = canvasSize;
+  const context = canvas.getContext('2d');
+  const fontSize = 50;
+  const text = 'Chạm Vào Tinh Cầu';
+  context.font = `bold ${fontSize}px Arial, sans-serif`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.shadowColor = '#ffb3de';
+  context.shadowBlur = 5;
+  context.lineWidth = 2;
+  context.strokeStyle = 'rgba(255, 200, 220, 0.8)';
+  context.strokeText(text, canvasSize / 2, canvasSize / 2);
+  context.shadowColor = '#e0b3ff';
+  context.shadowBlur = 5;
+  context.lineWidth = 2;
+  context.strokeStyle = 'rgba(220, 180, 255, 0.5)';
+  context.strokeText(text, canvasSize / 2, canvasSize / 2);
+  context.shadowColor = 'transparent';
+  context.shadowBlur = 0;
+  context.fillStyle = 'white';
+  context.fillText(text, canvasSize / 2, canvasSize / 2);
+  const textTexture = new THREE.CanvasTexture(canvas);
+  textTexture.needsUpdate = true;
+  const textMaterial = new THREE.MeshBasicMaterial({
+    map: textTexture,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const planeGeometry = new THREE.PlaneGeometry(16, 8);
+  hintText = new THREE.Mesh(planeGeometry, textMaterial);
+  hintText.position.set(0, 15, 0);
+  scene.add(hintText);
+}
+
 function animateHintIcon(time) {
   if (!hintIcon) return;
 
@@ -949,7 +959,8 @@ function animateHintIcon(time) {
     const ringScale = 1 + Math.sin(time * tapFrequency) * 0.1;
     ring.scale.set(ringScale, ringScale, 1);
     ring.material.opacity = 0.5 + Math.sin(time * tapFrequency) * 0.2;
-    // Xử lý văn bản gợi ý (thêm hiệu ứng mới)
+
+    // Xử lý văn bản gợi ý
     if (hintText) {
       hintText.visible = true;
       hintText.material.opacity = 0.7 + Math.sin(time * 3) * 0.3;
@@ -959,13 +970,11 @@ function animateHintIcon(time) {
   } else {
     // Ẩn icon đi khi intro đã bắt đầu
     if (hintIcon) hintIcon.visible = false;
-
     if (hintText) hintText.visible = false;
   }
 }
 
 // ---- CHỈNH SỬA VÒNG LẶP ANIMATE ----
-// Bạn cần thay thế hàm animate() cũ bằng hàm đã được chỉnh sửa này.
 function animate() {
   requestAnimationFrame(animate);
   const time = performance.now() * 0.001;
@@ -1052,7 +1061,9 @@ function animate() {
     const currentPos = star.userData.curve.getPoint(star.userData.progress);
     star.position.copy(currentPos);
     star.userData.head.material.opacity = opacity;
-    star.userData.head.children[0].material.uniforms.time.value = time;
+    if (star.userData.head.children[0] && star.userData.head.children[0].material && star.userData.head.children[0].material.uniforms) {
+      star.userData.head.children[0].material.uniforms.time.value = time;
+    }
 
     const trail = star.userData.trail;
     const trailPoints = star.userData.trailPoints;
@@ -1061,8 +1072,10 @@ function animate() {
       const trailProgress = Math.max(0, star.userData.progress - j * 0.01);
       trailPoints[j].copy(star.userData.curve.getPoint(trailProgress));
     }
-    trail.geometry.setFromPoints(trailPoints);
-    trail.material.opacity = opacity * 0.7;
+    if (trail && trail.geometry) {
+      trail.geometry.setFromPoints(trailPoints);
+      trail.material.opacity = opacity * 0.7;
+    }
   }
 
   if (shootingStars.length < 3 && Math.random() < 0.02) {
@@ -1108,47 +1121,11 @@ function animate() {
 
   renderer.render(scene, camera);
 }
-function createHintText() {
-  const canvasSize = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = canvasSize;
-  const context = canvas.getContext('2d');
-  const fontSize = 50;
-  const text = 'Chạm Vào Tinh Cầu';
-  context.font = `bold ${fontSize}px Arial, sans-serif`;
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.shadowColor = '#ffb3de';
-  context.shadowBlur = 5;
-  context.lineWidth = 2;
-  context.strokeStyle = 'rgba(255, 200, 220, 0.8)';
-  context.strokeText(text, canvasSize / 2, canvasSize / 2);
-  context.shadowColor = '#e0b3ff';
-  context.shadowBlur = 5;
-  context.lineWidth = 2;
-  context.strokeStyle = 'rgba(220, 180, 255, 0.5)';
-  context.strokeText(text, canvasSize / 2, canvasSize / 2);
-  context.shadowColor = 'transparent';
-  context.shadowBlur = 0;
-  context.fillStyle = 'white';
-  context.fillText(text, canvasSize / 2, canvasSize / 2);
-  const textTexture = new THREE.CanvasTexture(canvas);
-  textTexture.needsUpdate = true;
-  const textMaterial = new THREE.MeshBasicMaterial({
-    map: textTexture,
-    transparent: true,
-    side: THREE.DoubleSide
-  });
-  const planeGeometry = new THREE.PlaneGeometry(16, 8);
-  hintText = new THREE.Mesh(planeGeometry, textMaterial);
-  hintText.position.set(0, 15, 0);
-  scene.add(hintText);
-}
 
 // ---- CÁC HÀM XỬ LÝ SỰ KIỆN VÀ KHỞI ĐỘNG ----
 
 createShootingStar();
-createHintIcon(); // Gọi hàm tạo icon
+createHintIcon();
 createHintText();
 
 window.addEventListener('resize', () => {
@@ -1171,7 +1148,6 @@ function startCameraAnimation() {
   let progress = 0;
 
   function animatePath() {
-    // progress += 0.001010;
     progress += 0.0025;
     let newPos;
 
@@ -1191,7 +1167,7 @@ function startCameraAnimation() {
       };
     } else if (progress < duration1 + duration2 + duration3) {
       let t = (progress - duration1 - duration2) / duration3;
-      let easedT = 0.5 - 0.5 * Math.cos(Math.PI * t); // Ease-in-out
+      let easedT = 0.5 - 0.5 * Math.cos(Math.PI * t);
       newPos = {
         x: midPos2.x + (endPos.x - midPos2.x) * easedT,
         y: midPos2.y + (endPos.y - midPos2.y) * easedT,
@@ -1214,9 +1190,6 @@ function startCameraAnimation() {
   animatePath();
 }
 
-
-
-
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let introStarted = false;
@@ -1231,11 +1204,11 @@ function requestFullScreen() {
   const elem = document.documentElement;
   if (elem.requestFullscreen) {
     elem.requestFullscreen();
-  } else if (elem.mozRequestFullScreen) { // Firefox
+  } else if (elem.mozRequestFullScreen) {
     elem.mozRequestFullScreen();
-  } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, Opera
+  } else if (elem.webkitRequestFullscreen) {
     elem.webkitRequestFullscreen();
-  } else if (elem.msRequestFullscreen) { // IE/Edge
+  } else if (elem.msRequestFullscreen) {
     elem.msRequestFullscreen();
   }
 }
@@ -1254,7 +1227,7 @@ function onCanvasClick(event) {
     introStarted = true;
     fadeInProgress = true;
     document.body.classList.add("intro-started");
-    playGalaxyAudio(); // Khi script load, preload nhạc sẵn
+    playGalaxyAudio();
 
     startCameraAnimation();
 
@@ -1265,12 +1238,6 @@ function onCanvasClick(event) {
 }
 
 renderer.domElement.addEventListener("click", onCanvasClick);
-
-animate();
-
-renderer.domElement.addEventListener('click', onCanvasClick);
-
-animate();
 
 planet.name = 'main-planet';
 centralGlow.name = 'main-glow';
@@ -1299,387 +1266,9 @@ const container = document.getElementById('container');
 if (container) {
   container.addEventListener('touchmove', preventDefault, { passive: false });
 }
-// ADMIN PANEL FUNCTIONALITY
-// ADMIN PANEL FUNCTIONALITY
-class AdminPanel {
-    constructor() {
-        this.isVisible = false;
-        this.isAuthenticated = false;
-        this.userData = {};
-        this.validKeys = ['HUYPRO123', 'ADMIN888', 'SUPERKEY456']; // Thay bằng keys thật
-        this.visitorIPs = JSON.parse(localStorage.getItem('visitorIPs') || '[]');
-        
-        this.init();
-    }
 
-    init() {
-        this.createPanel();
-        this.setupEventListeners();
-        this.setupKeyHandlers();
-        this.saveCurrentVisitor(); // Lưu IP hiện tại khi khởi tạo
-    }
-
-    createPanel() {
-        // Panel đã được thêm trong HTML
-    }
-
-    setupEventListeners() {
-        // Submit key
-        document.getElementById('submit-key').addEventListener('click', () => {
-            this.validateKey();
-        });
-
-        // Enter để submit key
-        document.getElementById('key-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.validateKey();
-            }
-        });
-
-        // Các nút control
-        document.getElementById('refresh-data').addEventListener('click', () => {
-            this.collectUserData();
-        });
-
-        document.getElementById('export-data').addEventListener('click', () => {
-            this.exportUserData();
-        });
-
-        document.getElementById('close-panel').addEventListener('click', () => {
-            this.hidePanel();
-        });
-
-        // Nút xem danh sách IP
-        document.getElementById('view-ips').addEventListener('click', () => {
-            this.showIPList();
-        });
-    }
-
-    setupKeyHandlers() {
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'p' || e.key === 'P') {
-                e.preventDefault();
-                this.togglePanel();
-            }
-
-            // ESC để đóng panel
-            if (e.key === 'Escape' && this.isVisible) {
-                this.hidePanel();
-            }
-        });
-    }
-
-    togglePanel() {
-        const panel = document.getElementById('admin-panel');
-        if (this.isVisible) {
-            this.hidePanel();
-        } else {
-            this.showPanel();
-        }
-    }
-
-    showPanel() {
-        const panel = document.getElementById('admin-panel');
-        panel.classList.remove('hidden');
-        this.isVisible = true;
-        
-        // Reset form nếu chưa auth
-        if (!this.isAuthenticated) {
-            this.showKeyForm();
-        } else {
-            this.showMainForm();
-        }
-    }
-
-    hidePanel() {
-        const panel = document.getElementById('admin-panel');
-        panel.classList.add('hidden');
-        this.isVisible = false;
-    }
-
-    showKeyForm() {
-        document.getElementById('key-form').classList.remove('hidden');
-        document.getElementById('main-form').classList.add('hidden');
-        document.getElementById('ip-list').classList.add('hidden');
-        document.getElementById('key-input').focus();
-    }
-
-    showMainForm() {
-        document.getElementById('key-form').classList.add('hidden');
-        document.getElementById('main-form').classList.remove('hidden');
-        document.getElementById('ip-list').classList.add('hidden');
-        this.collectUserData();
-    }
-
-    showIPList() {
-        document.getElementById('key-form').classList.add('hidden');
-        document.getElementById('main-form').classList.add('hidden');
-        document.getElementById('ip-list').classList.remove('hidden');
-        this.displayIPList();
-    }
-
-    validateKey() {
-        const keyInput = document.getElementById('key-input');
-        const keyStatus = document.getElementById('key-status');
-        const key = keyInput.value.trim();
-
-        if (this.validKeys.includes(key)) {
-            keyStatus.textContent = '✅ KEY HỢP LỆ!';
-            keyStatus.style.color = '#00ff00';
-            this.isAuthenticated = true;
-            
-            setTimeout(() => {
-                this.showMainForm();
-            }, 1000);
-        } else {
-            keyStatus.textContent = '❌ KEY KHÔNG HỢP LỆ!';
-            keyStatus.style.color = '#ff0000';
-            keyInput.value = '';
-        }
-    }
-
-    async saveCurrentVisitor() {
-        try {
-            const ipResponse = await fetch('https://api.ipify.org?format=json');
-            const ipData = await ipResponse.json();
-            const currentIP = ipData.ip;
-
-            // Kiểm tra xem IP đã tồn tại chưa
-            const existingIP = this.visitorIPs.find(ipObj => ipObj.ip === currentIP);
-            
-            if (!existingIP) {
-                // Lấy thêm thông tin vị trí
-                const locationResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
-                const locationData = await locationResponse.json();
-                
-                const visitorInfo = {
-                    ip: currentIP,
-                    timestamp: new Date().toLocaleString('vi-VN'),
-                    city: locationData.city || 'Unknown',
-                    country: locationData.country_name || 'Unknown',
-                    isp: locationData.org || 'Unknown'
-                };
-
-                this.visitorIPs.push(visitorInfo);
-                this.saveToLocalStorage();
-            }
-        } catch (error) {
-            console.error('Lỗi lưu thông tin visitor:', error);
-        }
-    }
-
-    saveToLocalStorage() {
-        localStorage.setItem('visitorIPs', JSON.stringify(this.visitorIPs));
-    }
-
-    displayIPList() {
-        const ipListContainer = document.getElementById('ip-list-items');
-        ipListContainer.innerHTML = '';
-
-        if (this.visitorIPs.length === 0) {
-            ipListContainer.innerHTML = '<p class="no-data">Chưa có dữ liệu IP nào</p>';
-            return;
-        }
-
-        // Sắp xếp theo thời gian mới nhất
-        const sortedIPs = [...this.visitorIPs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        sortedIPs.forEach((visitor, index) => {
-            const ipItem = document.createElement('div');
-            ipItem.className = 'ip-item';
-            ipItem.innerHTML = `
-                <div class="ip-header">
-                    <span class="ip-number">${index + 1}. IP: ${visitor.ip}</span>
-                    <span class="ip-time">${visitor.timestamp}</span>
-                </div>
-                <div class="ip-details">
-                    <span class="ip-location">📍 ${visitor.city}, ${visitor.country}</span>
-                    <span class="ip-isp">🏢 ${visitor.isp}</span>
-                </div>
-            `;
-            ipListContainer.appendChild(ipItem);
-        });
-
-        // Cập nhật số lượng
-        document.getElementById('ip-count').textContent = `Tổng số: ${this.visitorIPs.length} IP`;
-    }
-
-    async collectUserData() {
-        try {
-            // Lấy IP và thông tin cơ bản
-            const ipResponse = await fetch('https://api.ipify.org?format=json');
-            const ipData = await ipResponse.json();
-            this.userData.ip = ipData.ip;
-
-            // Lấy thông tin vị trí chi tiết
-            const locationResponse = await fetch(`https://ipapi.co/${this.userData.ip}/json/`);
-            const locationData = await locationResponse.json();
-            
-            this.userData = {
-                ...this.userData,
-                city: locationData.city,
-                region: locationData.region,
-                country: locationData.country_name,
-                postal: locationData.postal,
-                timezone: locationData.timezone,
-                org: locationData.org,
-                latitude: locationData.latitude,
-                longitude: locationData.longitude,
-                accuracy: locationData.accuracy || 'High'
-            };
-
-            // Lấy thông tin thiết bị
-            this.getDeviceInfo();
-
-            // Thử lấy vị trí chính xác hơn từ GPS
-            this.getPreciseLocation();
-
-            this.updateDisplay();
-
-        } catch (error) {
-            console.error('Lỗi thu thập dữ liệu:', error);
-            this.getFallbackData();
-        }
-    }
-
-    getDeviceInfo() {
-        const ua = navigator.userAgent;
-        this.userData.device = {
-            browser: this.getBrowserInfo(ua),
-            os: this.getOSInfo(ua),
-            platform: navigator.platform,
-            cores: navigator.hardwareConcurrency || 'Unknown',
-            memory: navigator.deviceMemory || 'Unknown',
-            language: navigator.language,
-            screen: `${screen.width}x${screen.height}`,
-            colorDepth: `${screen.colorDepth} bit`
-        };
-    }
-
-    getBrowserInfo(ua) {
-        if (ua.includes('Chrome')) return 'Chrome';
-        if (ua.includes('Firefox')) return 'Firefox';
-        if (ua.includes('Safari')) return 'Safari';
-        if (ua.includes('Edge')) return 'Edge';
-        return 'Unknown';
-    }
-
-    getOSInfo(ua) {
-        if (ua.includes('Windows')) return 'Windows';
-        if (ua.includes('Mac')) return 'MacOS';
-        if (ua.includes('Linux')) return 'Linux';
-        if (ua.includes('Android')) return 'Android';
-        if (ua.includes('iOS')) return 'iOS';
-        return 'Unknown';
-    }
-
-    getPreciseLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    this.userData.preciseLocation = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: `${position.coords.accuracy}m`,
-                        altitude: position.coords.altitude,
-                        speed: position.coords.speed
-                    };
-                    this.updateDisplay();
-                },
-                (error) => {
-                    console.warn('Không thể lấy vị trí GPS:', error);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
-            );
-        }
-    }
-
-    getFallbackData() {
-        // Fallback data nếu API fail
-        this.userData = {
-            ip: 'Unknown',
-            city: 'Unknown',
-            region: 'Unknown', 
-            country: 'Unknown',
-            latitude: 'Unknown',
-            longitude: 'Unknown',
-            device: {
-                browser: this.getBrowserInfo(navigator.userAgent),
-                os: this.getOSInfo(navigator.userAgent),
-                screen: `${screen.width}x${screen.height}`
-            }
-        };
-        this.updateDisplay();
-    }
-
-    updateDisplay() {
-        // Update IP
-        document.getElementById('ip-address').textContent = this.userData.ip || 'Đang lấy...';
-        
-        // Update location
-        const locationText = this.userData.city ? 
-            `${this.userData.city}, ${this.userData.region}, ${this.userData.country}` : 
-            'Đang xác định...';
-        document.getElementById('location').textContent = locationText;
-        
-        // Update coordinates
-        let coordsText = 'Đang thu thập...';
-        if (this.userData.latitude && this.userData.longitude) {
-            coordsText = `${this.userData.latitude}, ${this.userData.longitude}`;
-            if (this.userData.preciseLocation) {
-                coordsText += ` (GPS: ${this.userData.preciseLocation.latitude}, ${this.userData.preciseLocation.longitude})`;
-            }
-        }
-        document.getElementById('coordinates').textContent = coordsText;
-        
-        // Update ISP
-        document.getElementById('isp').textContent = this.userData.org || 'Đang phân tích...';
-        
-        // Update device info
-        const deviceText = this.userData.device ? 
-            `${this.userData.device.browser} on ${this.userData.device.os} - ${this.userData.device.screen}` : 
-            'Đang nhận diện...';
-        document.getElementById('device-info').textContent = deviceText;
-    }
-
-    exportUserData() {
-        const dataStr = JSON.stringify(this.userData, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `user_data_${this.userData.ip || 'unknown'}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        alert('✅ Đã xuất thông tin người dùng!');
-    }
-}
-
-// Khởi tạo admin panel khi trang load
-let adminPanel;
-document.addEventListener('DOMContentLoaded', () => {
-    adminPanel = new AdminPanel();
-});
-
-// Thêm vào phần khởi tạo three.js của mày
-console.log('🔐 Admin Panel: Nhấn P để mở panel admin');
-
-
-// =======================================================================
-// ---- KIỂM TRA HƯỚNG MÀN HÌNH ĐỂ HIỂN THỊ CẢNH BÁO ----
-// =======================================================================
-
+// ---- KIỂM TRA HƯỚNG MÀN HÌNH ----
 function checkOrientation() {
-  // Kiểm tra nếu chiều cao lớn hơn chiều rộng (màn hình dọc trên điện thoại)
-  // Thêm một điều kiện nhỏ để không kích hoạt trên màn hình desktop hẹp.
   const isMobilePortrait = window.innerHeight > window.innerWidth && 'ontouchstart' in window;
 
   if (isMobilePortrait) {
@@ -1689,11 +1278,380 @@ function checkOrientation() {
   }
 }
 
-// Lắng nghe các sự kiện để kiểm tra lại hướng màn hình
 window.addEventListener('DOMContentLoaded', checkOrientation);
 window.addEventListener('resize', checkOrientation);
 window.addEventListener('orientationchange', () => {
-  // Thêm độ trễ để trình duyệt cập nhật kích thước chính xác
   setTimeout(checkOrientation, 200);
 });
 
+// ---- ADMIN PANEL ----
+class AdminPanel {
+  constructor() {
+    this.isVisible = false;
+    this.isAuthenticated = false;
+    this.userData = {};
+    this.validKeys = ['HUYPRO123', 'ADMIN888', 'SUPERKEY456'];
+    this.visitorIPs = JSON.parse(localStorage.getItem('visitorIPs') || '[]');
+    
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+    this.setupKeyHandlers();
+    this.saveCurrentVisitor();
+  }
+
+  setupEventListeners() {
+    const submitKeyBtn = document.getElementById('submit-key');
+    const keyInput = document.getElementById('key-input');
+    const refreshDataBtn = document.getElementById('refresh-data');
+    const exportDataBtn = document.getElementById('export-data');
+    const closePanelBtn = document.getElementById('close-panel');
+    const viewIPsBtn = document.getElementById('view-ips');
+
+    if (submitKeyBtn) submitKeyBtn.addEventListener('click', () => this.validateKey());
+    if (keyInput) keyInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.validateKey();
+    });
+    if (refreshDataBtn) refreshDataBtn.addEventListener('click', () => this.collectUserData());
+    if (exportDataBtn) exportDataBtn.addEventListener('click', () => this.exportUserData());
+    if (closePanelBtn) closePanelBtn.addEventListener('click', () => this.hidePanel());
+    if (viewIPsBtn) viewIPsBtn.addEventListener('click', () => this.showIPList());
+  }
+
+  setupKeyHandlers() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        this.togglePanel();
+      }
+
+      if (e.key === 'Escape' && this.isVisible) {
+        this.hidePanel();
+      }
+    });
+  }
+
+  togglePanel() {
+    const panel = document.getElementById('admin-panel');
+    if (this.isVisible) {
+      this.hidePanel();
+    } else {
+      this.showPanel();
+    }
+  }
+
+  showPanel() {
+    const panel = document.getElementById('admin-panel');
+    if (panel) {
+      panel.classList.remove('hidden');
+      this.isVisible = true;
+      
+      if (!this.isAuthenticated) {
+        this.showKeyForm();
+      } else {
+        this.showMainForm();
+      }
+    }
+  }
+
+  hidePanel() {
+    const panel = document.getElementById('admin-panel');
+    if (panel) {
+      panel.classList.add('hidden');
+      this.isVisible = false;
+    }
+  }
+
+  showKeyForm() {
+    const keyForm = document.getElementById('key-form');
+    const mainForm = document.getElementById('main-form');
+    const ipList = document.getElementById('ip-list');
+    
+    if (keyForm) keyForm.classList.remove('hidden');
+    if (mainForm) mainForm.classList.add('hidden');
+    if (ipList) ipList.classList.add('hidden');
+    
+    const keyInput = document.getElementById('key-input');
+    if (keyInput) keyInput.focus();
+  }
+
+  showMainForm() {
+    const keyForm = document.getElementById('key-form');
+    const mainForm = document.getElementById('main-form');
+    const ipList = document.getElementById('ip-list');
+    
+    if (keyForm) keyForm.classList.add('hidden');
+    if (mainForm) mainForm.classList.remove('hidden');
+    if (ipList) ipList.classList.add('hidden');
+    
+    this.collectUserData();
+  }
+
+  showIPList() {
+    const keyForm = document.getElementById('key-form');
+    const mainForm = document.getElementById('main-form');
+    const ipList = document.getElementById('ip-list');
+    
+    if (keyForm) keyForm.classList.add('hidden');
+    if (mainForm) mainForm.classList.add('hidden');
+    if (ipList) ipList.classList.remove('hidden');
+    
+    this.displayIPList();
+  }
+
+  validateKey() {
+    const keyInput = document.getElementById('key-input');
+    const keyStatus = document.getElementById('key-status');
+    
+    if (!keyInput || !keyStatus) return;
+    
+    const key = keyInput.value.trim();
+
+    if (this.validKeys.includes(key)) {
+      keyStatus.textContent = '✅ KEY HỢP LỆ!';
+      keyStatus.style.color = '#00ff00';
+      this.isAuthenticated = true;
+      
+      setTimeout(() => {
+        this.showMainForm();
+      }, 1000);
+    } else {
+      keyStatus.textContent = '❌ KEY KHÔNG HỢP LỆ!';
+      keyStatus.style.color = '#ff0000';
+      if (keyInput) keyInput.value = '';
+    }
+  }
+
+  async saveCurrentVisitor() {
+    try {
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      const currentIP = ipData.ip;
+
+      const existingIP = this.visitorIPs.find(ipObj => ipObj.ip === currentIP);
+      
+      if (!existingIP) {
+        const locationResponse = await fetch(`https://ipapi.co/${currentIP}/json/`);
+        const locationData = await locationResponse.json();
+        
+        const visitorInfo = {
+          ip: currentIP,
+          timestamp: new Date().toLocaleString('vi-VN'),
+          city: locationData.city || 'Unknown',
+          country: locationData.country_name || 'Unknown',
+          isp: locationData.org || 'Unknown'
+        };
+
+        this.visitorIPs.push(visitorInfo);
+        this.saveToLocalStorage();
+      }
+    } catch (error) {
+      console.error('Lỗi lưu thông tin visitor:', error);
+    }
+  }
+
+  saveToLocalStorage() {
+    localStorage.setItem('visitorIPs', JSON.stringify(this.visitorIPs));
+  }
+
+  displayIPList() {
+    const ipListContainer = document.getElementById('ip-list-items');
+    const ipCount = document.getElementById('ip-count');
+    
+    if (!ipListContainer) return;
+
+    ipListContainer.innerHTML = '';
+
+    if (this.visitorIPs.length === 0) {
+      ipListContainer.innerHTML = '<p class="no-data">Chưa có dữ liệu IP nào</p>';
+      return;
+    }
+
+    const sortedIPs = [...this.visitorIPs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    sortedIPs.forEach((visitor, index) => {
+      const ipItem = document.createElement('div');
+      ipItem.className = 'ip-item';
+      ipItem.innerHTML = `
+        <div class="ip-header">
+          <span class="ip-number">${index + 1}. IP: ${visitor.ip}</span>
+          <span class="ip-time">${visitor.timestamp}</span>
+        </div>
+        <div class="ip-details">
+          <span class="ip-location">📍 ${visitor.city}, ${visitor.country}</span>
+          <span class="ip-isp">🏢 ${visitor.isp}</span>
+        </div>
+      `;
+      ipListContainer.appendChild(ipItem);
+    });
+
+    if (ipCount) {
+      ipCount.textContent = `Tổng số: ${this.visitorIPs.length} IP`;
+    }
+  }
+
+  async collectUserData() {
+    try {
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      this.userData.ip = ipData.ip;
+
+      const locationResponse = await fetch(`https://ipapi.co/${this.userData.ip}/json/`);
+      const locationData = await locationResponse.json();
+      
+      this.userData = {
+        ...this.userData,
+        city: locationData.city,
+        region: locationData.region,
+        country: locationData.country_name,
+        postal: locationData.postal,
+        timezone: locationData.timezone,
+        org: locationData.org,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        accuracy: locationData.accuracy || 'High'
+      };
+
+      this.getDeviceInfo();
+      this.getPreciseLocation();
+      this.updateDisplay();
+
+    } catch (error) {
+      console.error('Lỗi thu thập dữ liệu:', error);
+      this.getFallbackData();
+    }
+  }
+
+  getDeviceInfo() {
+    const ua = navigator.userAgent;
+    this.userData.device = {
+      browser: this.getBrowserInfo(ua),
+      os: this.getOSInfo(ua),
+      platform: navigator.platform,
+      cores: navigator.hardwareConcurrency || 'Unknown',
+      memory: navigator.deviceMemory || 'Unknown',
+      language: navigator.language,
+      screen: `${screen.width}x${screen.height}`,
+      colorDepth: `${screen.colorDepth} bit`
+    };
+  }
+
+  getBrowserInfo(ua) {
+    if (ua.includes('Chrome')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari')) return 'Safari';
+    if (ua.includes('Edge')) return 'Edge';
+    return 'Unknown';
+  }
+
+  getOSInfo(ua) {
+    if (ua.includes('Windows')) return 'Windows';
+    if (ua.includes('Mac')) return 'MacOS';
+    if (ua.includes('Linux')) return 'Linux';
+    if (ua.includes('Android')) return 'Android';
+    if (ua.includes('iOS')) return 'iOS';
+    return 'Unknown';
+  }
+
+  getPreciseLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.userData.preciseLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: `${position.coords.accuracy}m`,
+            altitude: position.coords.altitude,
+            speed: position.coords.speed
+          };
+          this.updateDisplay();
+        },
+        (error) => {
+          console.warn('Không thể lấy vị trí GPS:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+  }
+
+  getFallbackData() {
+    this.userData = {
+      ip: 'Unknown',
+      city: 'Unknown',
+      region: 'Unknown', 
+      country: 'Unknown',
+      latitude: 'Unknown',
+      longitude: 'Unknown',
+      device: {
+        browser: this.getBrowserInfo(navigator.userAgent),
+        os: this.getOSInfo(navigator.userAgent),
+        screen: `${screen.width}x${screen.height}`
+      }
+    };
+    this.updateDisplay();
+  }
+
+  updateDisplay() {
+    const ipAddress = document.getElementById('ip-address');
+    const location = document.getElementById('location');
+    const coordinates = document.getElementById('coordinates');
+    const isp = document.getElementById('isp');
+    const deviceInfo = document.getElementById('device-info');
+    
+    if (ipAddress) ipAddress.textContent = this.userData.ip || 'Đang lấy...';
+    
+    const locationText = this.userData.city ? 
+      `${this.userData.city}, ${this.userData.region}, ${this.userData.country}` : 
+      'Đang xác định...';
+    if (location) location.textContent = locationText;
+    
+    let coordsText = 'Đang thu thập...';
+    if (this.userData.latitude && this.userData.longitude) {
+      coordsText = `${this.userData.latitude}, ${this.userData.longitude}`;
+      if (this.userData.preciseLocation) {
+        coordsText += ` (GPS: ${this.userData.preciseLocation.latitude}, ${this.userData.preciseLocation.longitude})`;
+      }
+    }
+    if (coordinates) coordinates.textContent = coordsText;
+    
+    if (isp) isp.textContent = this.userData.org || 'Đang phân tích...';
+    
+    const deviceText = this.userData.device ? 
+      `${this.userData.device.browser} on ${this.userData.device.os} - ${this.userData.device.screen}` : 
+      'Đang nhận diện...';
+    if (deviceInfo) deviceInfo.textContent = deviceText;
+  }
+
+  exportUserData() {
+    const dataStr = JSON.stringify(this.userData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `user_data_${this.userData.ip || 'unknown'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Đã xuất thông tin người dùng!');
+  }
+}
+
+// Khởi tạo admin panel khi trang load
+let adminPanel;
+document.addEventListener('DOMContentLoaded', () => {
+  adminPanel = new AdminPanel();
+});
+
+// Bắt đầu animate
+animate();
+
+console.log('🔐 Admin Panel: Nhấn P để mở panel admin');
